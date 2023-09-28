@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdio>
 #include <string>
 #include <utility>
 
@@ -28,13 +29,18 @@
 #include "starkware/crypt_tools/invoke.h"
 #include "starkware/crypt_tools/template_instantiation.h"
 #include "starkware/randomness/prng.h"
+#include <stdio.h>
 
 namespace starkware {
 
-NoninteractiveProverChannel::NoninteractiveProverChannel(std::unique_ptr<PrngBase> prng)
+NoninteractiveProverChannel::NoninteractiveProverChannel(
+    std::unique_ptr<PrngBase> prng)
     : prng_(std::move(prng)) {}
 
-void NoninteractiveProverChannel::SendBytes(const gsl::span<const std::byte> raw_bytes) {
+void NoninteractiveProverChannel::SendBytes(
+    const gsl::span<const std::byte> raw_bytes) {
+
+  std::printf("SendBytes FUNCTION CALL");
   for (std::byte raw_byte : raw_bytes) {
     proof_.push_back(raw_byte);
   }
@@ -44,25 +50,33 @@ void NoninteractiveProverChannel::SendBytes(const gsl::span<const std::byte> raw
   proof_statistics_.byte_count += raw_bytes.size();
 }
 
-std::vector<std::byte> NoninteractiveProverChannel::ReceiveBytes(const size_t num_bytes) {
-  ASSERT_RELEASE(!in_query_phase_, "Prover can't receive randomness after query phase has begun.");
+std::vector<std::byte>
+NoninteractiveProverChannel::ReceiveBytes(const size_t num_bytes) {
+  ASSERT_RELEASE(
+      !in_query_phase_,
+      "Prover can't receive randomness after query phase has begun.");
   std::vector<std::byte> bytes(num_bytes);
   prng_->GetRandomBytes(bytes);
   return bytes;
 }
 
-FieldElement NoninteractiveProverChannel::ReceiveFieldElementImpl(const Field& field) {
-  ASSERT_RELEASE(!in_query_phase_, "Prover can't receive randomness after query phase has begun.");
+FieldElement
+NoninteractiveProverChannel::ReceiveFieldElementImpl(const Field &field) {
+  ASSERT_RELEASE(
+      !in_query_phase_,
+      "Prover can't receive randomness after query phase has begun.");
   VLOG(4) << "Prng state: " << BytesToHexString(prng_->GetPrngState());
   return field.RandomElement(prng_.get());
 }
 
 /*
-  Receives a random number from the verifier. The number should be chosen uniformly in the range
-  [0, upper_bound).
+  Receives a random number from the verifier. The number should be chosen
+  uniformly in the range [0, upper_bound).
 */
 uint64_t NoninteractiveProverChannel::ReceiveNumberImpl(uint64_t upper_bound) {
-  ASSERT_RELEASE(!in_query_phase_, "Prover can't receive randomness after query phase has begun.");
+  ASSERT_RELEASE(
+      !in_query_phase_,
+      "Prover can't receive randomness after query phase has begun.");
   return NoninteractiveChannelUtils::GetRandomNumber(upper_bound, prng_.get());
 }
 
@@ -73,14 +87,17 @@ void NoninteractiveProverChannel::ApplyProofOfWork(size_t security_bits) {
 
   AnnotationScope scope(this, "Proof of Work");
 
-  std::vector<std::byte> proof_of_work = InvokeByHashFunc(prng_->GetHashName(), [&](auto hash_tag) {
-    using HashT = typename decltype(hash_tag)::type;
-    ProofOfWorkProver<HashT> pow_prover;
-    return pow_prover.Prove(prng_->GetPrngState(), security_bits);
-  });
+  std::vector<std::byte> proof_of_work =
+      InvokeByHashFunc(prng_->GetHashName(), [&](auto hash_tag) {
+        using HashT = typename decltype(hash_tag)::type;
+        ProofOfWorkProver<HashT> pow_prover;
+        return pow_prover.Prove(prng_->GetPrngState(), security_bits);
+      });
   SendData(proof_of_work, "POW");
 }
 
-std::vector<std::byte> NoninteractiveProverChannel::GetProof() const { return proof_; }
+std::vector<std::byte> NoninteractiveProverChannel::GetProof() const {
+  return proof_;
+}
 
-}  // namespace starkware
+} // namespace starkware
