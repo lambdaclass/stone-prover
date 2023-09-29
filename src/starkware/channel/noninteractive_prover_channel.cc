@@ -40,7 +40,7 @@ NoninteractiveProverChannel::NoninteractiveProverChannel(
 void NoninteractiveProverChannel::SendBytes(
     const gsl::span<const std::byte> raw_bytes) {
 
-  std::printf("SendBytes FUNCTION CALL");
+  std::printf("SendBytes FUNCTION CALL\n");
   for (std::byte raw_byte : raw_bytes) {
     proof_.push_back(raw_byte);
   }
