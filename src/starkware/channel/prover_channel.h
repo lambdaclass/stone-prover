@@ -17,6 +17,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -36,104 +37,123 @@ namespace starkware {
 using std::uint64_t;
 
 class ProverChannel : public Channel {
- public:
+public:
   virtual ~ProverChannel() = default;
 
-  void SendData(gsl::span<const std::byte> data, const std::string& annotation = "") {
+  void SendData(gsl::span<const std::byte> data,
+                const std::string &annotation = "") {
+    std::printf("\n");
+    std::printf("SendData FUNCTION CALL\n");
     SendBytes(data);
     if (AnnotationsEnabled()) {
-      AnnotateProverToVerifier(annotation + ": Data(" + BytesToHexString(data) + ")", data.size());
+      AnnotateProverToVerifier(
+          annotation + ": Data(" + BytesToHexString(data) + ")", data.size());
     }
     proof_statistics_.data_count += 1;
   }
 
-  void SendFieldElement(const FieldElement& value, const std::string& annotation = "") {
+  void SendFieldElement(const FieldElement &value,
+                        const std::string &annotation = "") {
+    std::printf("\n");
+    std::printf("SendFieldElement FUNCTION CALL\n");
     SendFieldElementImpl(value);
     if (AnnotationsEnabled()) {
-      AnnotateProverToVerifier(
-          annotation + ": Field Element(" + value.ToString() + ")", value.SizeInBytes());
+      AnnotateProverToVerifier(annotation + ": Field Element(" +
+                                   value.ToString() + ")",
+                               value.SizeInBytes());
     }
     proof_statistics_.field_element_count += 1;
   }
 
-  void SendFieldElementSpan(
-      const ConstFieldElementSpan& values, const std::string& annotation = "") {
+  void SendFieldElementSpan(const ConstFieldElementSpan &values,
+                            const std::string &annotation = "") {
     SendFieldElementSpanImpl(values);
+    std::printf("\n");
+    std::printf("SendFieldElementSpan FUNCTION CALL\n");
     if (AnnotationsEnabled()) {
       std::ostringstream oss;
       oss << annotation << ": Field Elements(" << values << ")";
-      AnnotateProverToVerifier(oss.str(), values.Size() * values.GetField().ElementSizeInBytes());
+      AnnotateProverToVerifier(
+          oss.str(), values.Size() * values.GetField().ElementSizeInBytes());
     }
     proof_statistics_.field_element_count += values.Size();
   }
 
   template <typename HashT>
-  void SendCommitmentHash(const HashT& hash, const std::string& annotation = "") {
+  void SendCommitmentHash(const HashT &hash,
+                          const std::string &annotation = "") {
     SendBytes(hash.GetDigest());
     if (AnnotationsEnabled()) {
-      AnnotateProverToVerifier(
-          annotation + ": Hash(" + hash.ToString() + ")", HashT::kDigestNumBytes);
+      AnnotateProverToVerifier(annotation + ": Hash(" + hash.ToString() + ")",
+                               HashT::kDigestNumBytes);
     }
     proof_statistics_.commitment_count += 1;
     proof_statistics_.hash_count += 1;
   }
 
-  FieldElement ReceiveFieldElement(const Field& field, const std::string& annotation = "") {
+  FieldElement ReceiveFieldElement(const Field &field,
+                                   const std::string &annotation = "") {
     FieldElement field_element = ReceiveFieldElementImpl(field);
     if (AnnotationsEnabled()) {
-      AnnotateVerifierToProver(annotation + ": Field Element(" + field_element.ToString() + ")");
+      AnnotateVerifierToProver(annotation + ": Field Element(" +
+                               field_element.ToString() + ")");
     }
     return field_element;
   }
 
   FieldElement GetRandomFieldElementFromVerifierImpl(
-      const Field& field, const std::string& annotation) override {
+      const Field &field, const std::string &annotation) override {
     return ReceiveFieldElement(field, annotation);
   }
 
   template <typename HashT>
-  void SendDecommitmentNode(const HashT& hash_node, const std::string& annotation = "") {
+  void SendDecommitmentNode(const HashT &hash_node,
+                            const std::string &annotation = "") {
     SendBytes(hash_node.GetDigest());
     if (AnnotationsEnabled()) {
-      AnnotateProverToVerifier(
-          annotation + ": Hash(" + hash_node.ToString() + ")", HashT::kDigestNumBytes);
+      AnnotateProverToVerifier(annotation + ": Hash(" + hash_node.ToString() +
+                                   ")",
+                               HashT::kDigestNumBytes);
     }
     proof_statistics_.hash_count++;
   }
 
   /*
-    Receives a random number from the verifier. The number should be chosen uniformly in the
-    range [0, upper_bound).
+    Receives a random number from the verifier. The number should be chosen
+    uniformly in the range [0, upper_bound).
   */
-  uint64_t ReceiveNumber(uint64_t upper_bound, const std::string& annotation = "") {
+  uint64_t ReceiveNumber(uint64_t upper_bound,
+                         const std::string &annotation = "") {
     uint64_t number = ReceiveNumberImpl(upper_bound);
     if (AnnotationsEnabled()) {
-      AnnotateVerifierToProver(annotation + ": Number(" + std::to_string(number) + ")");
+      AnnotateVerifierToProver(annotation + ": Number(" +
+                               std::to_string(number) + ")");
     }
     return number;
   }
 
-  uint64_t GetRandomNumberFromVerifierImpl(
-      uint64_t upper_bound, const std::string& annotation) override {
+  uint64_t
+  GetRandomNumberFromVerifierImpl(uint64_t upper_bound,
+                                  const std::string &annotation) override {
     return ReceiveNumber(upper_bound, annotation);
   }
 
- protected:
+protected:
   // ===============================================================================================
-  // The following methods should not be overridden by the subclass, they are defined as virtual to
-  // allow writing expectations on them using gmock.
+  // The following methods should not be overridden by the subclass, they are
+  // defined as virtual to allow writing expectations on them using gmock.
   // ===============================================================================================
-  virtual void SendFieldElementImpl(const FieldElement& value);
-  virtual void SendFieldElementSpanImpl(const ConstFieldElementSpan& values);
+  virtual void SendFieldElementImpl(const FieldElement &value);
+  virtual void SendFieldElementSpanImpl(const ConstFieldElementSpan &values);
   // ===============================================================================================
   // True pure virtual methods:
   // ===============================================================================================
-  virtual FieldElement ReceiveFieldElementImpl(const Field& field) = 0;
+  virtual FieldElement ReceiveFieldElementImpl(const Field &field) = 0;
   virtual uint64_t ReceiveNumberImpl(uint64_t upper_bound) = 0;
   virtual void SendBytes(gsl::span<const std::byte> raw_bytes) = 0;
   virtual std::vector<std::byte> ReceiveBytes(size_t num_bytes) = 0;
 };
 
-}  // namespace starkware
+} // namespace starkware
 
-#endif  // STARKWARE_CHANNEL_PROVER_CHANNEL_H_
+#endif // STARKWARE_CHANNEL_PROVER_CHANNEL_H_

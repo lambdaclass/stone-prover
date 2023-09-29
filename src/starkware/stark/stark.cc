@@ -419,6 +419,7 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
 
   AnnotationScope scope(channel_.get(), "STARK");
 
+  std::printf("\n");
   std::printf("Starting first trace committment...\n");
   std::vector<MaybeOwnedPtr<CommittedTraceProverBase>> traces;
   // Add first committed trace.
@@ -431,6 +432,7 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
   }
 
   std::printf("End first trace committment\n");
+  std::printf("\n");
   std::printf("Starting interaction phase...\n");
   //  Prepare for interaction.
   const Air *current_air = (params_->air).get();
@@ -472,6 +474,8 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
   }
 
   std::printf("End interaction phase\n");
+
+  std::printf("\n");
   std::printf("Creating composition polynomial...\n");
   // Create composition polynomial from AIR.
   std::unique_ptr<CompositionPolynomial> composition_polynomial;
@@ -481,14 +485,17 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
         channel_.get(), params_->field,
         params_->evaluation_domain.TraceGenerator(), *current_air);
   }
-  std::printf("End composition polynomial creation\n");
 
-  std::printf("Starting composition oracle prover (OODS)...\n");
+  std::printf(
+      "Starting composition oracle prover (True composition poly?)...\n");
   CompositionOracleProver composition_oracle(
       UseOwned(&params_->evaluation_domain), std::move(traces),
       current_air->GetMask(), UseOwned(current_air),
       UseOwned(composition_polynomial.get()), channel_.get());
+  std::printf("End composition oracle prover (True composition poly?)");
 
+  std::printf("\n");
+  std::printf("Start of OODS composition oracle (True DEEP poly?)");
   const CompositionOracleProver oods_composition_oracle =
       OutOfDomainSamplingProve(std::move(composition_oracle));
   std::printf("End of OODS...\n");
