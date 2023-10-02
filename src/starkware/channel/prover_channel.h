@@ -110,6 +110,7 @@ public:
   template <typename HashT>
   void SendDecommitmentNode(const HashT &hash_node,
                             const std::string &annotation = "") {
+    std::printf("SendDecommitmentNode FUNCTION CALL");
     SendBytes(hash_node.GetDigest());
     if (AnnotationsEnabled()) {
       AnnotateProverToVerifier(annotation + ": Hash(" + hash_node.ToString() +
