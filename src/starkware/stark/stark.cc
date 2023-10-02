@@ -15,6 +15,7 @@
 #include "starkware/stark/stark.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <map>
 #include <set>
 #include <tuple>
@@ -346,6 +347,7 @@ StarkProver::OutOfDomainSamplingProve(CompositionOracleProver original_oracle) {
   const size_t n_breaks = original_oracle.ConstraintsDegreeBound();
 
   ProfilingBlock composition_block("Composition polynomial computation");
+
   auto composition_eval =
       original_oracle.EvalComposition(config_->constraint_polynomial_task_size);
   composition_block.CloseBlock();
@@ -365,10 +367,14 @@ StarkProver::OutOfDomainSamplingProve(CompositionOracleProver original_oracle) {
                      broken_bases->At(0).BasisSize(),
                  "Trace and Broken bases do no match");
 
+  std::printf("\n");
+  std::printf("Start composition poly commitment...");
   // Lde and Commit on Broken.
   auto broken_trace =
       CommitOnTrace(std::move(broken_uncommitted_trace), *broken_bases, false,
                     "Commit on composition");
+
+  std::printf("End composition poly commitment");
   auto boundary_conditions =
       oods::ProveOods(channel_.get(), original_oracle, broken_trace,
                       params_->use_extension_field);
