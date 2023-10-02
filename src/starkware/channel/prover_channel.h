@@ -82,6 +82,7 @@ public:
   template <typename HashT>
   void SendCommitmentHash(const HashT &hash,
                           const std::string &annotation = "") {
+    std::printf("SendCommitmentHash FUNCTION CALL\n");
     SendBytes(hash.GetDigest());
     if (AnnotationsEnabled()) {
       AnnotateProverToVerifier(annotation + ": Hash(" + hash.ToString() + ")",

@@ -318,6 +318,7 @@ void StarkProver::PerformLowDegreeTest(const CompositionOracleProver &oracle) {
         oracle.DecommitQueries(queries);
       };
 
+  std::printf("Start FRI proving...\n");
   FriProver fri_prover(UseOwned(channel_), UseOwned(table_prover_factory_),
                        UseOwned(params_->fri_params),
                        std::move(composition_polynomial_evaluation),
