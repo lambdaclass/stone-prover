@@ -14,6 +14,7 @@
 
 #include "starkware/fri/fri_prover.h"
 
+#include <cstdio>
 #include <set>
 
 #include "starkware/algebra/lde/lde.h"
@@ -27,8 +28,9 @@ namespace starkware {
 using starkware::fri::details::ChooseQueryIndices;
 
 FriProver::FriProver(
-    MaybeOwnedPtr<ProverChannel> channel, MaybeOwnedPtr<TableProverFactory> table_prover_factory,
-    MaybeOwnedPtr<FriParameters> params, FieldElementVector&& witness,
+    MaybeOwnedPtr<ProverChannel> channel,
+    MaybeOwnedPtr<TableProverFactory> table_prover_factory,
+    MaybeOwnedPtr<FriParameters> params, FieldElementVector &&witness,
     MaybeOwnedPtr<FirstLayerCallback> first_layer_queries_callback,
     MaybeOwnedPtr<const FriProverConfig> fri_prover_config)
     : channel_(std::move(channel)),
@@ -53,36 +55,43 @@ MaybeOwnedPtr<const FriLayer> FriProver::CommitmentPhase() {
       Pow2(fri_prover_config_->log_n_max_in_memory_fri_layer_elements);
 
   // Add first layer (layer 0):
-  MaybeOwnedPtr<const FriLayer> first_layer(
-      UseMovedValue(FriLayerOutOfMemory(std::move(witness_), UseOwned(params_->fft_bases))));
+  MaybeOwnedPtr<const FriLayer> first_layer(UseMovedValue(
+      FriLayerOutOfMemory(std::move(witness_), UseOwned(params_->fft_bases))));
   MaybeOwnedPtr<const FriLayer> current_layer = UseOwned(first_layer);
 
   for (size_t layer_num = 1; layer_num <= n_layers_; ++layer_num) {
     const size_t fri_step = params_->fri_step_list[layer_num - 1];
-    const size_t next_fri_step = (layer_num < n_layers_) ? params_->fri_step_list[layer_num] : 0;
-    bool is_chunk_too_small = current_layer->ChunkSize() / Pow2(next_fri_step + fri_step) < 2;
+    const size_t next_fri_step =
+        (layer_num < n_layers_) ? params_->fri_step_list[layer_num] : 0;
+    bool is_chunk_too_small =
+        current_layer->ChunkSize() / Pow2(next_fri_step + fri_step) < 2;
     bool is_in_memory = current_layer->LayerSize() <= in_memory_fri_elements ||
                         layer_num == n_layers_ || is_chunk_too_small;
 
-    ASSERT_RELEASE(layer_num == 1 || fri_step != 0, "layer_num is not zero but fri step is");
-    ASSERT_RELEASE(layer_num < n_layers_ || is_in_memory, "last layer must be in memory");
+    ASSERT_RELEASE(layer_num == 1 || fri_step != 0,
+                   "layer_num is not zero but fri step is");
+    ASSERT_RELEASE(layer_num < n_layers_ || is_in_memory,
+                   "last layer must be in memory");
 
     AnnotationScope scope(channel_.get(), "Layer " + std::to_string(layer_num));
 
-    current_layer = CreateNextFriLayer(std::move(current_layer), fri_step, &basis_index);
+    current_layer =
+        CreateNextFriLayer(std::move(current_layer), fri_step, &basis_index);
 
     if (is_in_memory) {
       if (first_in_memory && fri_step != 0) {
-        // Optimize creation of 1st in memory layer by creating out of memory layer just before it.
-        // This makes the first LDE smaller.
+        // Optimize creation of 1st in memory layer by creating out of memory
+        // layer just before it. This makes the first LDE smaller.
         coset_size = SafeDiv(coset_size, Pow2(fri_step));
-        current_layer = UseMovedValue(FriLayerOutOfMemory(std::move(current_layer), coset_size));
+        current_layer = UseMovedValue(
+            FriLayerOutOfMemory(std::move(current_layer), coset_size));
       }
       first_in_memory = false;
       current_layer = UseMovedValue(FriLayerInMemory(std::move(current_layer)));
     } else {
       coset_size = SafeDiv(coset_size, Pow2(fri_step));
-      current_layer = UseMovedValue(FriLayerOutOfMemory(std::move(current_layer), coset_size));
+      current_layer = UseMovedValue(
+          FriLayerOutOfMemory(std::move(current_layer), coset_size));
     }
 
     MaybeOwnedPtr<const FriLayer> new_layer = UseOwned(current_layer);
@@ -94,7 +103,8 @@ MaybeOwnedPtr<const FriLayer> FriProver::CommitmentPhase() {
 
     // Create committed layer:
     committed_layers_.emplace_back(UseMovedValue(FriCommittedLayerByTableProver(
-        next_fri_step, std::move(current_layer), *table_prover_factory_, *params_, layer_num)));
+        next_fri_step, std::move(current_layer), *table_prover_factory_,
+        *params_, layer_num)));
     current_layer = UseOwned(new_layer);
   }
 
@@ -103,26 +113,30 @@ MaybeOwnedPtr<const FriLayer> FriProver::CommitmentPhase() {
 
 // Generates the next FriLayer.
 // Done by creating middleware proxy layers and returning the last of them.
-MaybeOwnedPtr<const FriLayer> FriProver::CreateNextFriLayer(
-    MaybeOwnedPtr<const FriLayer> current_layer, size_t fri_step, size_t* basis_index) {
+MaybeOwnedPtr<const FriLayer>
+FriProver::CreateNextFriLayer(MaybeOwnedPtr<const FriLayer> current_layer,
+                              size_t fri_step, size_t *basis_index) {
   std::optional<FieldElement> eval_point = std::nullopt;
   if (fri_step != 0) {
-    eval_point = channel_->ReceiveFieldElement(params_->field, "Evaluation point");
+    eval_point =
+        channel_->ReceiveFieldElement(params_->field, "Evaluation point");
   }
 
   for (size_t j = 0; j < fri_step; j++, (*basis_index)++) {
-    current_layer = UseMovedValue(
-        FriLayerProxy(*folder_, std::move(current_layer), *eval_point, fri_prover_config_.get()));
-    eval_point = params_->fft_bases->ApplyBasisTransform(*eval_point, *basis_index);
+    current_layer =
+        UseMovedValue(FriLayerProxy(*folder_, std::move(current_layer),
+                                    *eval_point, fri_prover_config_.get()));
+    eval_point =
+        params_->fft_bases->ApplyBasisTransform(*eval_point, *basis_index);
   }
 
   return current_layer;
 }
 
-void FriProver::SendLastLayer(MaybeOwnedPtr<const FriLayer>&& last_layer) {
+void FriProver::SendLastLayer(MaybeOwnedPtr<const FriLayer> &&last_layer) {
   AnnotationScope scope(channel_.get(), "Last Layer");
-  // If the original witness was of the correct degree, the last layer should be of degree <
-  // last_layer_degree_bound.
+  // If the original witness was of the correct degree, the last layer should be
+  // of degree < last_layer_degree_bound.
   const uint64_t degree_bound = params_->last_layer_degree_bound;
 
   size_t last_layer_basis_index = Sum(params_->fri_step_list);
@@ -136,39 +150,49 @@ void FriProver::SendLastLayer(MaybeOwnedPtr<const FriLayer>&& last_layer) {
   lde_manager->AddEvaluation(std::move(last_layer_evaluations));
 
   int64_t degree = lde_manager->GetEvaluationDegree(0);
-  ASSERT_RELEASE(
-      degree < (int64_t)degree_bound, "Last FRI layer is of degree: " + std::to_string(degree) +
-                                          ". Expected degree < " + std::to_string(degree_bound));
+  ASSERT_RELEASE(degree < (int64_t)degree_bound,
+                 "Last FRI layer is of degree: " + std::to_string(degree) +
+                     ". Expected degree < " + std::to_string(degree_bound));
 
   const auto coefs = lde_manager->GetCoefficients(0);
-  channel_->SendFieldElementSpan(coefs.SubSpan(0, degree_bound), "Coefficients");
+  channel_->SendFieldElementSpan(coefs.SubSpan(0, degree_bound),
+                                 "Coefficients");
 }
 
 void FriProver::ProveFri() {
   // Commitment phase.
+  std::printf("Start FRI commitment phase...\n");
   {
     AnnotationScope scope(channel_.get(), "Commitment");
     MaybeOwnedPtr<const FriLayer> last_layer = CommitmentPhase();
     SendLastLayer(std::move(last_layer));
   }
+  std::printf("End FRI commitment phase\n");
 
+  std::printf("Start FRI query phase...\n");
   // Query phase.
   std::vector<uint64_t> queries = ChooseQueryIndices(
-      channel_.get(), params_->fft_bases->At(params_->fri_step_list.at(0)).Size(),
+      channel_.get(),
+      params_->fft_bases->At(params_->fri_step_list.at(0)).Size(),
       params_->n_queries, params_->proof_of_work_bits);
-  // It is not allowed for the verifier to send randomness to the prover after the following line.
+  // It is not allowed for the verifier to send randomness to the prover after
+  // the following line.
 
   channel_->BeginQueryPhase();
+  std::printf("End FRI query phase\n");
 
+  std::printf("Start FRI decommitmentp phase...\n");
   // Decommitment phase.
   AnnotationScope scope(channel_.get(), "Decommitment");
 
   ProfilingBlock profiling_block("FRI response generation");
   size_t layer_num = 0;
-  for (auto& layer : committed_layers_) {
-    AnnotationScope scope(channel_.get(), "Layer " + std::to_string(layer_num++));
+  for (auto &layer : committed_layers_) {
+    AnnotationScope scope(channel_.get(),
+                          "Layer " + std::to_string(layer_num++));
     layer->Decommit(queries);
   }
+  std::printf("End FRI decommitment phase\n");
 }
 
-}  // namespace starkware
+} // namespace starkware
