@@ -59,7 +59,7 @@ MaybeOwnedPtr<const FriLayer> FriProver::CommitmentPhase() {
       FriLayerOutOfMemory(std::move(witness_), UseOwned(params_->fft_bases))));
   MaybeOwnedPtr<const FriLayer> current_layer = UseOwned(first_layer);
 
-  std::printf("NUMBER OF FRI LAYERS: %d", n_layers);
+  std::printf("NUMBER OF FRI LAYERS: %d", n_layers_);
 
   for (size_t layer_num = 1; layer_num <= n_layers_; ++layer_num) {
     const size_t fri_step = params_->fri_step_list[layer_num - 1];

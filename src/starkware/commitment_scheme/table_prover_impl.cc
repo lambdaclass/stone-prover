@@ -173,7 +173,7 @@ void TableProverImpl::Decommit(
     elements_data_last_rows.push_back(column.SubSpan(all_query_rows_.size()));
   }
 
-  std::printf("NUMBER OF COLUMNS OF ELEMENTS_DATA IN DECOMMIT: %d", n_columns);
+  std::printf("NUMBER OF COLUMNS OF ELEMENTS_DATA IN DECOMMIT: %d", n_columns_);
 
   // Transmit data for the queries, sorted by row and then column.
   // Note: currently we cannot simply iterate over to_transmit, since a row, for
