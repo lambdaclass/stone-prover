@@ -79,6 +79,7 @@ public:
       for (size_t i = 0; i < width; ++i) {
         printf("%s\t", values_[i][j].ToString().c_str());
       }
+      printf("\n");
     }
   }
 
