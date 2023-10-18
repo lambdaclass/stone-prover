@@ -77,7 +77,7 @@ public:
     for (size_t j = 0; j < height; j++) {
       printf("ROW NUMBER %zu\n", j);
       for (size_t i = 0; i < width; ++i) {
-        printf("%s\n", values_[i][j].ToString().c_str());
+        printf("%s\t", values_[i][j].ToString().c_str());
       }
     }
   }
