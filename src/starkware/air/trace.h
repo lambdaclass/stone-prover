@@ -80,12 +80,13 @@ public:
 
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; ++i) {
-        printf("%s", values_[i][j].ToString().c_str());
+        trace_file << values_[i][j].ToString();
         if (i != (width - 1)) {
-          printf(",");
+          trace_file << ", ";
         }
       }
-      printf("\n");
+
+      trace_file << "\n";
     }
 
     trace_file.close();
