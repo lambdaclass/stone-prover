@@ -412,7 +412,7 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
   ProfilingBlock profiling_block("Trace generation");
   Trace trace = trace_context->GetTrace();
 
-  trace.DumpCsvTrace();
+  trace.DumpCsvTrace("main_trace.csv");
 
   profiling_block.CloseBlock();
 
@@ -448,6 +448,9 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
         interaction_params->n_interaction_elements, params_->field,
         channel_.get()));
     auto interaction_trace = trace_context->GetInteractionTrace();
+
+    interaction_trace.DumpCsvTrace("interaction_trace.csv");
+
     ASSERT_RELEASE(interaction_params->n_columns_second ==
                        interaction_trace.Width(),
                    "Number of columns in interaction trace is wrong.");

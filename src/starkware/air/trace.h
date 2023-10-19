@@ -71,12 +71,12 @@ public:
     return trace;
   }
 
-  void DumpCsvTrace() {
+  void DumpCsvTrace(const std::string &filename) {
     const size_t height = values_[0].Size();
     const size_t width = values_.size();
 
     std::ofstream trace_file;
-    trace_file.open("trace.csv");
+    trace_file.open(filename);
 
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; ++i) {
