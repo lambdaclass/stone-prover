@@ -412,7 +412,7 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
   ProfilingBlock profiling_block("Trace generation");
   Trace trace = trace_context->GetTrace();
 
-  trace.PrintTrace();
+  trace.DumpCsvTrace();
 
   profiling_block.CloseBlock();
 

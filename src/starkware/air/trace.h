@@ -15,6 +15,7 @@
 #ifndef STARKWARE_AIR_TRACE_H_
 #define STARKWARE_AIR_TRACE_H_
 
+#include <fstream>
 #include <utility>
 #include <vector>
 
@@ -70,17 +71,24 @@ public:
     return trace;
   }
 
-  void PrintTrace() {
+  void DumpCsvTrace() {
     const size_t height = values_[0].Size();
     const size_t width = values_.size();
 
+    std::ofstream trace_file;
+    trace_file.open("trace.csv");
+
     for (size_t j = 0; j < height; j++) {
-      printf("ROW NUMBER %zu\n", j);
       for (size_t i = 0; i < width; ++i) {
-        printf("%s\t", values_[i][j].ToString().c_str());
+        printf("%s", values_[i][j].ToString().c_str());
+        if (i != (width - 1)) {
+          printf(",");
+        }
       }
       printf("\n");
     }
+
+    trace_file.close();
   }
 
   size_t Length() const { return values_[0].Size(); }
