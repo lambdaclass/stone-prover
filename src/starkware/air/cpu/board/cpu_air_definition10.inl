@@ -238,13 +238,13 @@ CpuAirDefinition<FieldElementT, 10>::ConstraintsEval(
   ASSERT_VERIFIER(periodic_columns.empty(),
                   "periodic_columns should be empty.");
 
-  std::cout << "RC16 PERMUTATION INTERACTION ELEMENT: "
+  std::cout << "\nRC16 PERMUTATION INTERACTION ELEMENT: "
             << rc16__perm__interaction_elm_;
 
-  std::cout << "MMEMORY MULTI COLUMN PERM PERM INTERACTION ELEMENT: "
+  std::cout << "\nMMEMORY MULTI COLUMN PERM PERM INTERACTION ELEMENT: "
             << memory__multi_column_perm__perm__interaction_elm_;
 
-  std::cout << "MMEMORY MULTI COLUMN PERM HASH INTERACTION ELEMENT: "
+  std::cout << "\nMMEMORY MULTI COLUMN PERM HASH INTERACTION ELEMENT: "
             << memory__multi_column_perm__hash_interaction_elm0_;
 
   const FieldElementT cpu__decode__opcode_rc__bit_0 =
